@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Dashboard</title>
+</head>
+<body>
+    <h1>Welcome, {{ customer.name }}</h1>
+    <h2>Your Info</h2>
+    <p>SSN: {{ customer.ssn }}</p>
+    <p>Branch: {{ customer.branch.name }}</p>
+    <h2>Transactions</h2>
+    <ul>
+        {% for transaction in transactions %}
+            <li>{{ transaction.trans_date }}: {{ transaction.amount }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

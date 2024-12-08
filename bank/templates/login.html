@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <h2>Login</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <label for="login_type">Login as:</label>
+        <select name="login_type" id="login_type">
+            <option value="customer">Customer</option>
+            <option value="employee">Employee</option>
+            <option value="branch">Branch</option>
+        </select><br><br>
+        <div id="customer_fields">
+            <label for="ssn">SSN:</label>
+            <input type="text" name="ssn" id="ssn"><br>
+            <label for="name">Name:</label>
+            <input type="text" name="name" id="name"><br>
+        </div>
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>

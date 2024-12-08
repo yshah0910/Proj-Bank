@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Dashboard</title>
+</head>
+<body>
+    <h1>Welcome, {{ employee.name }}</h1>
+    <h2>Your Customers</h2>
+    <ul>
+        {% for customer in customers %}
+            <li>{{ customer.name }}</li>
+        {% endfor %}
+    </ul>
+    <h2>Your Manager</h2>
+    <p>{{ employee.manager_ssn.name }}</p>
+    <h2>Your Dependents</h2>
+    <ul>
+        {% for dependent in dependents %}
+            <li>{{ dependent.name }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
