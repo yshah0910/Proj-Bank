@@ -1,39 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Customer Dashboard</title>
+    <title>Employee Dashboard</title>
 </head>
 <body>
-    <h1>Welcome, {{ customer.name }}</h1>
+    <h1>Welcome, {{ employee.name }}</h1>
 
     <h2>Your Information</h2>
-    <p><strong>SSN:</strong> {{ customer.ssn }}</p>
-    <p><strong>Branch:</strong> 
-        {% if customer.branch %}
-            {{ customer.branch.name }}
-        {% else %}
-            No branch assigned
-        {% endif %}
-    </p>
-    <p><strong>Branch Address:</strong> {{ branch_address }}</p>
-    <p><strong>Account Type:</strong> {{ account_type }}</p>
-    <p><strong>Associated Employee:</strong> {{ associated_employee }}</p>
+    <p><strong>SSN:</strong> {{ employee.ssn }}</p>
+    <p><strong>Branch:</strong> {{ branch_name }}</p>
+    <p><strong>Manager:</strong> {{ manager_name }}</p>
 
-    <h2>Last Transaction</h2>
-    {% if last_transaction %}
-        <p><strong>Date:</strong> {{ last_transaction.trans_date }}</p>
-        <p><strong>Amount:</strong> {{ last_transaction.amount }}</p>
-        <p><strong>Type:</strong> {{ last_transaction.trans_type }}</p>
-    {% else %}
-        <p>No transactions found.</p>
-    {% endif %}
+    <h2>Your Customers</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Customer Name</th>
+                <th>Account Type</th>
+                <th>Last Activity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for customer in customer_details %}
+                <tr>
+                    <td>{{ customer.name }}</td>
+                    <td>{{ customer.account_type }}</td>
+                    <td>{{ customer.last_activity }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">No customers assigned.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-    <h2>All Transactions</h2>
+    <h2>Your Dependents</h2>
     <ul>
-        {% for transaction in transactions %}
-            <li>{{ transaction.trans_date }}: {{ transaction.amount }} ({{ transaction.trans_type }})</li>
+        {% for dependent in dependents %}
+            <li>{{ dependent.name }}</li>
         {% empty %}
-            <li>No transactions available.</li>
+            <li>No dependents assigned.</li>
         {% endfor %}
     </ul>
 </body>
