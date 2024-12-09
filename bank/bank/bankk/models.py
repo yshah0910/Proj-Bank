@@ -1,4 +1,5 @@
 from django.db import models
+
 class Account(models.Model):
     account_no = models.IntegerField(db_column='Account_No', primary_key=True)  # Field name made lowercase.
     balance = models.DecimalField(db_column='Balance', max_digits=10, decimal_places=2, blank=True, null=True)  # Field name made lowercase.
@@ -96,8 +97,13 @@ class Customer(models.Model):
     city = models.CharField(db_column='City', max_length=30, blank=True, null=True)  # Field name made lowercase.
     zip = models.IntegerField(db_column='Zip', blank=True, null=True)  # Field name made lowercase.
     branch = models.ForeignKey(Branch, models.DO_NOTHING, db_column='Branch_id', blank=True, null=True)  # Field name made lowercase.
-    e_ssn = models.ForeignKey('Employee', models.DO_NOTHING, db_column='E_SSN', blank=True, null=True)  # Field name made lowercase.
-
+    e_ssn = models.ForeignKey(
+        'Employee',  # String reference to avoid circular imports
+        models.DO_NOTHING,
+        db_column='E_SSN',
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         managed = False
