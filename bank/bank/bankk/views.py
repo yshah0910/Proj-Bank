@@ -79,7 +79,67 @@ def login_view(request):
         # Generic error for invalid login type
         return render(request, 'login.html', {'error': 'Invalid login type selected.'})
 
-    return render(request, 'login.html')
+    branches = Branch.objects.all()
+    return render(request, 'login.html', {'branches': branches})
+
+
+def signup_view(request):
+    if request.method == 'POST':
+        account_type = request.POST.get('account_type')
+
+        if account_type == 'customer':
+            ssn = request.POST.get('ssn')
+            name = request.POST.get('name')
+            apt_no = request.POST.get('apt_no')
+            street_no = request.POST.get('street_no')
+            state = request.POST.get('state')
+            city = request.POST.get('city')
+            zip = request.POST.get('zip')
+            branch_id = request.POST.get('branch_id_customer_signup')
+
+            if not all([ssn, name, apt_no, street_no, state, city, zip, branch_id]):
+                return render(request, 'login.html', {'error': 'All fields are required for customer signup.'})
+
+            Customer.objects.create(ssn=ssn, name=name, apt_no=apt_no, street_no=street_no, state=state, city=city, zip=zip, branch_id=branch_id)
+            return redirect('login')
+
+        elif account_type == 'employee':
+            ssn = request.POST.get('ssn')
+            name = request.POST.get('name')
+            phone_no = request.POST.get('phone_no')
+            start_date = request.POST.get('start_date')
+            branch_id = request.POST.get('branch_id')
+            mgr_ssn = request.POST.get('mgr_ssn')
+
+            if not all([ssn, name, phone_no, start_date, branch_id, mgr_ssn]):
+                return render(request, 'login.html', {'error': 'All fields are required for employee signup.'})
+
+            manager = Employee.objects.filter(ssn=mgr_ssn).first()
+            if not manager:
+                return render(request, 'login.html', {'error': 'Manager SSN is invalid.'})
+
+            Employee.objects.create(ssn=ssn, name=name, phone_no=phone_no, start_date=start_date, branch_id=branch_id, manager_ssn=manager)
+            return redirect('login')
+
+        elif account_type == 'branch':
+            branch_id = request.POST.get('branch_id')
+            name = request.POST.get('name')
+            address = request.POST.get('address')
+            assets = request.POST.get('assets')
+            mgr_ssn = request.POST.get('mgr_ssn')
+
+            if not all([branch_id, name, address, assets, mgr_ssn]):
+                return render(request, 'login.html', {'error': 'All fields are required for branch signup.'})
+
+            manager = Employee.objects.filter(ssn=mgr_ssn).first()
+            if not manager:
+                return render(request, 'login.html', {'error': 'Manager SSN is invalid.'})
+
+            Branch.objects.create(branch_id=branch_id, name=name, address=address, assets=assets, mgr_ssn=manager)
+            return redirect('login')
+
+    branches = Branch.objects.all()
+    return render(request, 'login.html', {'branches': branches})
 
 
 def customer_dashboard(request, ssn):

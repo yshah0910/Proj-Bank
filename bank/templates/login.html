@@ -1,47 +1,118 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
+    <title>Login and Create Account</title>
     <script>
-        function updateFields() {
+        function updateFieldsLogin() {
             const loginType = document.getElementById('login_type').value;
 
             // Enable/disable fields based on login type
-            document.querySelectorAll('#customer_fields input').forEach(input => {
+            document.querySelectorAll('#customer_fields_login input').forEach(input => {
                 input.disabled = loginType !== 'customer';
             });
 
-            document.querySelectorAll('#employee_fields input').forEach(input => {
+            document.querySelectorAll('#employee_fields_login input').forEach(input => {
                 input.disabled = loginType !== 'employee';
             });
 
-            document.querySelectorAll('#branch_fields input').forEach(input => {
+            document.querySelectorAll('#branch_fields_login input').forEach(input => {
                 input.disabled = loginType !== 'branch';
             });
 
             // Show/hide field sections for better UX
-            document.getElementById('customer_fields').style.display = loginType === 'customer' ? 'block' : 'none';
-            document.getElementById('employee_fields').style.display = loginType === 'employee' ? 'block' : 'none';
-            document.getElementById('branch_fields').style.display = loginType === 'branch' ? 'block' : 'none';
+            document.getElementById('customer_fields_login').style.display = loginType === 'customer' ? 'block' : 'none';
+            document.getElementById('employee_fields_login').style.display = loginType === 'employee' ? 'block' : 'none';
+            document.getElementById('branch_fields_login').style.display = loginType === 'branch' ? 'block' : 'none';
+        }
+
+        function updateFieldsSignup() {
+            const accountType = document.getElementById('account_type').value;
+
+            // Enable/disable fields based on account type
+            document.querySelectorAll('#customer_fields_signup input').forEach(input => {
+                input.disabled = accountType !== 'customer';
+            });
+
+            document.querySelectorAll('#employee_fields_signup input').forEach(input => {
+                input.disabled = accountType !== 'employee';
+            });
+
+            document.querySelectorAll('#branch_fields_signup input').forEach(input => {
+                input.disabled = accountType !== 'branch';
+            });
+
+            // Show/hide field sections for better UX
+            document.getElementById('customer_fields_signup').style.display = accountType === 'customer' ? 'block' : 'none';
+            document.getElementById('employee_fields_signup').style.display = accountType === 'employee' ? 'block' : 'none';
+            document.getElementById('branch_fields_signup').style.display = accountType === 'branch' ? 'block' : 'none';
         }
 
         // Initialize fields on page load
-        window.onload = updateFields;
+        window.onload = function() {
+            updateFieldsLogin();
+            updateFieldsSignup();
+        };
+
+        function validateForm() {
+            const accountType = document.getElementById('account_type').value;
+
+            if (accountType === 'customer') {
+                const ssn = document.getElementById('ssn').value;
+                const name = document.getElementById('name').value;
+                const aptNo = document.getElementById('apt_no').value;
+                const streetNo = document.getElementById('street_no').value;
+                const state = document.getElementById('state').value;
+                const city = document.getElementById('city').value;
+                const zip = document.getElementById('zip').value;
+                const branchId = document.getElementById('branch_id_customer_signup').value;
+                console.log(ssn, name, aptNo, streetNo, state, city, zip, branchId);
+
+                // Basic validation
+                if (!ssn || !name || !aptNo || !streetNo || !state || !city || !zip || !branchId) {
+                    alert('Please fill in all fields');
+                    return false;
+                }
+
+                if (isNaN(ssn)) {
+                    alert('SSN must be a number');
+                    return false;
+                }
+
+                if (isNaN(aptNo)){
+                    alert('Apartment number must be a number');
+                    return false;
+                }
+
+                if (isNaN(streetNo)){
+                    alert('Street number must be a number');
+                    return false;
+                }
+                
+                
+                if (isNaN(zip)) {
+                    alert('Zip code must be a number');
+                    return false;
+                }
+            }
+
+            return true;
+        }
     </script>
 </head>
 <body>
+    <!-- Login Form -->
     <h2>Login</h2>
     <form method="POST" action="">
         {% csrf_token %}
         <label for="login_type">Login as:</label>
-        <select name="login_type" id="login_type" onchange="updateFields()">
+        <select name="login_type" id="login_type" onchange="updateFieldsLogin()">
             <option value="customer">Customer</option>
             <option value="employee">Employee</option>
             <option value="branch">Branch</option>
         </select><br><br>
 
         <!-- Customer Login Fields -->
-        <div id="customer_fields">
+        <div id="customer_fields_login">
             <label for="customer_ssn">SSN:</label>
             <input type="password" name="ssn" id="customer_ssn"><br>
             <label for="customer_name">Name:</label>
@@ -49,7 +120,7 @@
         </div>
 
         <!-- Employee Login Fields -->
-        <div id="employee_fields">
+        <div id="employee_fields_login">
             <label for="employee_ssn">SSN:</label>
             <input type="password" name="ssn" id="employee_ssn"><br>
             <label for="employee_name">Name:</label>
@@ -57,7 +128,7 @@
         </div>
 
         <!-- Branch Login Fields -->
-        <div id="branch_fields">
+        <div id="branch_fields_login">
             <label for="branch_id">Branch ID:</label>
             <input type="text" name="branch_id" id="branch_id"><br>
             <label for="mgr_ssn">Manager SSN:</label>
@@ -65,6 +136,83 @@
         </div>
 
         <button type="submit">Login</button>
+    </form>
+
+    <br><br>
+
+    <!-- Signup Form -->
+    <h2>Create Account</h2>
+    <form method="POST" action="{% url 'signup_view' %}" onsubmit="return validateForm()">
+        {% csrf_token %}
+        <label for="account_type">Account Type:</label>
+        <select name="account_type" id="account_type" onchange="updateFieldsSignup()">
+            <option value="customer">Customer</option>
+            <option value="employee">Employee</option>
+            <option value="branch">Branch</option>
+        </select><br><br>
+
+        <!-- Customer Account Creation Fields -->
+        <div id="customer_fields_signup">
+            <label for="ssn">SSN:</label>
+            <input type="password" name="ssn" id="ssn" maxlength="9" required><br>
+
+            <label for="name">Full Name:</label>
+            <input type="text" name="name" id="name" required><br>
+
+            <label for="apt_no">Apartment Number:</label>
+            <input type="number" name="apt_no" id="apt_no" required><br>
+
+            <label for="street_no">Street Number:</label>
+            <input type="number" name="street_no" id="street_no" required><br>
+
+            <label for="state">State:</label>
+            <input type="text" name="state" id="state" required><br>
+
+            <label for="city">City:</label>
+            <input type="text" name="city" id="city" required><br>
+
+            <label for="zip">Zip Code:</label>
+            <input type="number" name="zip" id="zip" maxlength="5" required><br>
+
+            <label for="branch_id_customer_signup">Branch ID:</label>
+            <select name="branch_id_customer_signup" id="branch_id_customer_signup" required>
+                {% for branch in branches %}
+                    <option value="{{ branch.branch_id }}">{{ branch.branch_id }}: {{ branch.name }}</option>
+                {% endfor %}
+            </select><br>
+        </div>
+
+        <!-- Employee Account Creation Fields -->
+        <div id="employee_fields_signup">
+            <label for="employee_ssn">SSN:</label>
+            <input type="password" name="ssn" id="employee_ssn" required><br>
+            <label for="employee_name">Name:</label>
+            <input type="text" name="name" id="employee_name" required><br>
+            <label for="employee_phone_no">Phone Number:</label>
+            <input type="text" name="phone_no" id="employee_phone_no" required><br>
+            <label for="employee_start_date">Start Date:</label>
+            <input type="date" name="start_date" id="employee_start_date" required><br>
+            <label for="employee_branch_id">Branch ID:</label>
+            <input type="text" name="branch_id" id="employee_branch_id" required><br>
+            <label for="employee_mgr_ssn">Manager SSN:</label>
+            <input type="password" name="mgr_ssn" id="employee_mgr_ssn" required><br>
+        </div>
+
+        <!-- Branch Account Creation Fields -->
+        <div id="branch_fields_signup">
+            <label for="branch_id">Branch ID:</label>
+            <input type="text" name="branch_id" id="branch_id" required><br>
+            <label for="branch_name">Name:</label>
+            <input type="text" name="name" id="branch_name" required><br>
+            <label for="branch_address">Address:</label>
+            <input type="text" name="address" id="branch_address" required><br>
+            <label for="branch_assets">Assets:</label>
+            <input type="number" name="assets" id="branch_assets" required><br>
+            <label for="mgr_ssn">Manager SSN:</label>
+            <input type="password" name="mgr_ssn" id="mgr_ssn" required><br>
+        </div>
+
+        <button type="submit">Create Account</button>
     </form>
 </body>
 </html>
