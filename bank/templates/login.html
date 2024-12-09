@@ -2,23 +2,68 @@
 <html>
 <head>
     <title>Login</title>
+    <script>
+        function updateFields() {
+            const loginType = document.getElementById('login_type').value;
+
+            // Enable/disable fields based on login type
+            document.querySelectorAll('#customer_fields input').forEach(input => {
+                input.disabled = loginType !== 'customer';
+            });
+
+            document.querySelectorAll('#employee_fields input').forEach(input => {
+                input.disabled = loginType !== 'employee';
+            });
+
+            document.querySelectorAll('#branch_fields input').forEach(input => {
+                input.disabled = loginType !== 'branch';
+            });
+
+            // Show/hide field sections for better UX
+            document.getElementById('customer_fields').style.display = loginType === 'customer' ? 'block' : 'none';
+            document.getElementById('employee_fields').style.display = loginType === 'employee' ? 'block' : 'none';
+            document.getElementById('branch_fields').style.display = loginType === 'branch' ? 'block' : 'none';
+        }
+
+        // Initialize fields on page load
+        window.onload = updateFields;
+    </script>
 </head>
 <body>
     <h2>Login</h2>
-    <form method="POST">
+    <form method="POST" action="">
         {% csrf_token %}
         <label for="login_type">Login as:</label>
-        <select name="login_type" id="login_type">
+        <select name="login_type" id="login_type" onchange="updateFields()">
             <option value="customer">Customer</option>
             <option value="employee">Employee</option>
             <option value="branch">Branch</option>
         </select><br><br>
+
+        <!-- Customer Login Fields -->
         <div id="customer_fields">
-            <label for="ssn">SSN:</label>
-            <input type="text" name="ssn" id="ssn"><br>
-            <label for="name">Name:</label>
-            <input type="text" name="name" id="name"><br>
+            <label for="customer_ssn">SSN:</label>
+            <input type="password" name="ssn" id="customer_ssn"><br>
+            <label for="customer_name">Name:</label>
+            <input type="text" name="name" id="customer_name"><br>
         </div>
+
+        <!-- Employee Login Fields -->
+        <div id="employee_fields">
+            <label for="employee_ssn">SSN:</label>
+            <input type="password" name="ssn" id="employee_ssn"><br>
+            <label for="employee_name">Name:</label>
+            <input type="text" name="name" id="employee_name"><br>
+        </div>
+
+        <!-- Branch Login Fields -->
+        <div id="branch_fields">
+            <label for="branch_id">Branch ID:</label>
+            <input type="text" name="branch_id" id="branch_id"><br>
+            <label for="mgr_ssn">Manager SSN:</label>
+            <input type="password" name="mgr_ssn" id="mgr_ssn"><br>
+        </div>
+
         <button type="submit">Login</button>
     </form>
 </body>
