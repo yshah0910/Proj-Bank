@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from bank.bankk import views
 
 urlpatterns = [
     path('', views.login_view, name='login'),
