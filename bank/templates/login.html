@@ -1,70 +1,192 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login and Customer Signup</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: url('https://d194ip2226q57d.cloudfront.net/images/LegacyBank_New-Exterior.original.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 400px;
+            padding: 15px 20px;
+        }
+        h2 {
+            margin-bottom: 15px;
+            color: #333;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        form {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin: 8px 0 3px;
+            font-weight: bold;
+            color: #555;
+            font-size: 0.9em;
+        }
+        input,
+        select {
+            width: 100%;
+            padding: 6px 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        button {
+            width: 100%;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            padding: 8px;
+            font-size: 1em;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
     <script>
-        function updateFields() {
+        function toggleForm(formType) {
+            const loginForm = document.getElementById('login_form');
+            const signupForm = document.getElementById('signup_form');
+            if (formType === 'login') {
+                loginForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+            } else {
+                loginForm.classList.add('hidden');
+                signupForm.classList.remove('hidden');
+            }
+        }
+
+        function updateLoginFields() {
             const loginType = document.getElementById('login_type').value;
 
-            // Enable/disable fields based on login type
-            document.querySelectorAll('#customer_fields input').forEach(input => {
+            document.querySelectorAll('#customer_login_fields input').forEach(input => {
                 input.disabled = loginType !== 'customer';
             });
 
-            document.querySelectorAll('#employee_fields input').forEach(input => {
+            document.querySelectorAll('#employee_login_fields input').forEach(input => {
                 input.disabled = loginType !== 'employee';
             });
 
-            document.querySelectorAll('#branch_fields input').forEach(input => {
+            document.querySelectorAll('#branch_login_fields input').forEach(input => {
                 input.disabled = loginType !== 'branch';
             });
 
-            // Show/hide field sections for better UX
-            document.getElementById('customer_fields').style.display = loginType === 'customer' ? 'block' : 'none';
-            document.getElementById('employee_fields').style.display = loginType === 'employee' ? 'block' : 'none';
-            document.getElementById('branch_fields').style.display = loginType === 'branch' ? 'block' : 'none';
+            document.getElementById('customer_login_fields').style.display = loginType === 'customer' ? 'block' : 'none';
+            document.getElementById('employee_login_fields').style.display = loginType === 'employee' ? 'block' : 'none';
+            document.getElementById('branch_login_fields').style.display = loginType === 'branch' ? 'block' : 'none';
         }
 
-        // Initialize fields on page load
-        window.onload = updateFields;
+        window.onload = updateLoginFields;
     </script>
 </head>
 <body>
-    <h2>Login</h2>
-    <form method="POST" action="">
-        {% csrf_token %}
-        <label for="login_type">Login as:</label>
-        <select name="login_type" id="login_type" onchange="updateFields()">
-            <option value="customer">Customer</option>
-            <option value="employee">Employee</option>
-            <option value="branch">Branch</option>
-        </select><br><br>
+    <div class="container">
+        <!-- Login Form -->
+        <div id="login_form">
+            <h2>Login</h2>
+            <form method="POST" action="{% url 'login_view' %}">
+                {% csrf_token %}
+                <label for="login_type">Login as:</label>
+                <select name="login_type" id="login_type" onchange="updateLoginFields()">
+                    <option value="customer">Customer</option>
+                    <option value="employee">Employee</option>
+                    <option value="branch">Branch</option>
+                </select>
 
-        <!-- Customer Login Fields -->
-        <div id="customer_fields">
-            <label for="customer_ssn">SSN:</label>
-            <input type="password" name="ssn" id="customer_ssn"><br>
-            <label for="customer_name">Name:</label>
-            <input type="text" name="name" id="customer_name"><br>
+                <div id="customer_login_fields">
+                    <label for="customer_ssn">SSN:</label>
+                    <input type="password" name="ssn" id="customer_ssn">
+                    <label for="customer_name">Name:</label>
+                    <input type="text" name="name" id="customer_name">
+                </div>
+
+                <div id="employee_login_fields" class="hidden">
+                    <label for="employee_ssn">SSN:</label>
+                    <input type="password" name="ssn" id="employee_ssn">
+                    <label for="employee_name">Name:</label>
+                    <input type="text" name="name" id="employee_name">
+                </div>
+
+                <div id="branch_login_fields" class="hidden">
+                    <label for="branch_id">Branch ID:</label>
+                    <input type="text" name="branch_id" id="branch_id">
+                    <label for="mgr_ssn">Manager SSN:</label>
+                    <input type="password" name="mgr_ssn" id="mgr_ssn">
+                </div>
+
+                <button type="submit">Login</button>
+            </form>
+            <button onclick="toggleForm('signup')">Create Customer Account</button>
         </div>
 
-        <!-- Employee Login Fields -->
-        <div id="employee_fields">
-            <label for="employee_ssn">SSN:</label>
-            <input type="password" name="ssn" id="employee_ssn"><br>
-            <label for="employee_name">Name:</label>
-            <input type="text" name="name" id="employee_name"><br>
-        </div>
+        <!-- Signup Form -->
+        <div id="signup_form" class="hidden">
+            <h2>Customer Signup</h2>
+            <form method="POST" action="{% url 'signup_view' %}">
+                {% csrf_token %}
+                <label for="ssn">SSN:</label>
+                <input type="text" name="ssn" id="ssn" maxlength="9" required>
 
-        <!-- Branch Login Fields -->
-        <div id="branch_fields">
-            <label for="branch_id">Branch ID:</label>
-            <input type="text" name="branch_id" id="branch_id"><br>
-            <label for="mgr_ssn">Manager SSN:</label>
-            <input type="password" name="mgr_ssn" id="mgr_ssn"><br>
-        </div>
+                <label for="name">Name:</label>
+                <input type="text" name="name" id="name" required>
+                
+                <label for="apt_no">Apartment Number:</label>
+                <input type="number" name="apt_no" id="apt_no" required>
 
-        <button type="submit">Login</button>
-    </form>
+                <label for="street_no">Street Number:</label>
+                <input type="number" name="street_no" id="street_no" required>
+
+                <label for="state">State:</label>
+                <input type="text" name="state" id="state" required>
+
+                <label for="city">City:</label>
+                <input type="text" name="city" id="city" required>
+
+                <label for="zip">Zip Code:</label>
+                <input type="number" name="zip" id="zip" maxlength="5" required>
+
+                <label for="branch_id_customer_signup">Branch ID:</label>
+                <select name="branch_id_customer_signup" id="branch_id_customer_signup" required>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+
+                <label for="acc_type">Account Type:</label>
+                <select name="acc_type" id="acc_type" required>
+                    <option value="Loan Account">Loan Account</option>
+                    <option value="Savings Account">Savings Account</option>
+                    <option value="Checking Account">Checking Account</option>
+                </select>
+
+                <button type="submit">Create Account</button>
+            </form>
+            <button onclick="toggleForm('login')">Back to Login</button>
+        </div>
+    </div>
 </body>
 </html>
