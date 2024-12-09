@@ -5,18 +5,42 @@
 </head>
 <body>
     <h1>Welcome, {{ employee.name }}</h1>
+
+    <h2>Your Information</h2>
+    <p><strong>SSN:</strong> {{ employee.ssn }}</p>
+    <p><strong>Branch:</strong> {{ branch_name }}</p>
+    <p><strong>Manager:</strong> {{ manager_name }}</p>
+
     <h2>Your Customers</h2>
-    <ul>
-        {% for customer in customers %}
-            <li>{{ customer.name }}</li>
-        {% endfor %}
-    </ul>
-    <h2>Your Manager</h2>
-    <p>{{ employee.manager_ssn.name }}</p>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Customer Name</th>
+                <th>Account Type</th>
+                <th>Last Activity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for customer in customer_details %}
+                <tr>
+                    <td>{{ customer.name }}</td>
+                    <td>{{ customer.account_type }}</td>
+                    <td>{{ customer.last_activity }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">No customers assigned.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
     <h2>Your Dependents</h2>
     <ul>
         {% for dependent in dependents %}
             <li>{{ dependent.name }}</li>
+        {% empty %}
+            <li>No dependents assigned.</li>
         {% endfor %}
     </ul>
 </body>
