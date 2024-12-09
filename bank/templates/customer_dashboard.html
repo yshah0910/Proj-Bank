@@ -5,13 +5,35 @@
 </head>
 <body>
     <h1>Welcome, {{ customer.name }}</h1>
-    <h2>Your Info</h2>
-    <p>SSN: {{ customer.ssn }}</p>
-    <p>Branch: {{ customer.branch.name }}</p>
-    <h2>Transactions</h2>
+
+    <h2>Your Information</h2>
+    <p><strong>SSN:</strong> {{ customer.ssn }}</p>
+    <p><strong>Branch:</strong> 
+        {% if customer.branch %}
+            {{ customer.branch.name }}
+        {% else %}
+            No branch assigned
+        {% endif %}
+    </p>
+    <p><strong>Branch Address:</strong> {{ branch_address }}</p>
+    <p><strong>Account Type:</strong> {{ account_type }}</p>
+    <p><strong>Associated Employee:</strong> {{ associated_employee }}</p>
+
+    <h2>Last Transaction</h2>
+    {% if last_transaction %}
+        <p><strong>Date:</strong> {{ last_transaction.trans_date }}</p>
+        <p><strong>Amount:</strong> {{ last_transaction.amount }}</p>
+        <p><strong>Type:</strong> {{ last_transaction.trans_type }}</p>
+    {% else %}
+        <p>No transactions found.</p>
+    {% endif %}
+
+    <h2>All Transactions</h2>
     <ul>
         {% for transaction in transactions %}
-            <li>{{ transaction.trans_date }}: {{ transaction.amount }}</li>
+            <li>{{ transaction.trans_date }}: {{ transaction.amount }} ({{ transaction.trans_type }})</li>
+        {% empty %}
+            <li>No transactions available.</li>
         {% endfor %}
     </ul>
 </body>
