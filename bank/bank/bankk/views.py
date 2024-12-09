@@ -2,8 +2,9 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User, Group
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse  # Ensure reverse is imported
-from bank.bankk.models import Customer, Employee, Branch, Transaction, Dependent
+from bank.bankk.models import Customer, Employee, Branch, Transaction, Dependent, CustomerAccount, Loan, Savings, Checking, Account
 from django.http import HttpResponseRedirect
+from django.db.models import Q
 
 
 def login_view(request):
@@ -141,19 +142,149 @@ def signup_view(request):
     branches = Branch.objects.all()
     return render(request, 'login.html', {'branches': branches})
 
+from django.db.models import Q
 
 def customer_dashboard(request, ssn):
     print(f"Loading dashboard for customer SSN: {ssn}")
+
+    # Fetch customer details
     customer = get_object_or_404(Customer, ssn=ssn)
+
+    # Fetch last transaction
+    last_transaction = (
+        Transaction.objects.filter(account_no__customeraccount__ssn=customer)
+        .order_by('-trans_date')
+        .first()
+    )
+
+    # Branch address
+    branch_address = customer.branch.address if customer.branch else "No branch assigned"
+
+    # Determine account type based on related account
+    account = CustomerAccount.objects.filter(ssn=customer).first()
+    account_type = None
+    if account:
+        if Loan.objects.filter(account_no=account.account_no).exists():
+            account_type = "Loan Account"
+        elif Savings.objects.filter(account_no=account.account_no).exists():
+            account_type = "Savings Account"
+        elif Checking.objects.filter(account_no=account.account_no).exists():
+            account_type = "Checking Account"
+        else:
+            account_type = "Unknown Account Type"
+
+    # Associated employee
+    associated_employee = customer.e_ssn.name if customer.e_ssn else "No assigned employee"
+
+    # Fetch all transactions
     transactions = Transaction.objects.filter(account_no__customeraccount__ssn=customer)
-    return render(request, 'customer_dashboard.html', {'customer': customer, 'transactions': transactions})
 
+    # Context for template
+    context = {
+        'customer': customer,
+        'last_transaction': last_transaction,
+        'branch_address': branch_address,
+        'account_type': account_type,
+        'associated_employee': associated_employee,
+        'transactions': transactions,
+    }
+
+    return render(request, 'customer_dashboard.html', context)
 def employee_dashboard(request, ssn):
+    # Fetch employee details
     employee = get_object_or_404(Employee, ssn=ssn)
-    customers = Customer.objects.filter(e_ssn=employee)
-    dependents = Dependent.objects.filter(essn=employee)
-    return render(request, 'employee_dashboard.html', {'employee': employee, 'customers': customers, 'dependents': dependents})
 
+    # Fetch branch name
+    branch_name = employee.branch.name if employee.branch else "No branch assigned"
+
+    # Fetch manager name
+    manager_name = employee.manager_ssn.name if employee.manager_ssn else "No manager assigned"
+
+    # Fetch all customers assigned to this employee
+    customers = Customer.objects.filter(e_ssn=employee)
+
+    # Prepare customer details
+    customer_details = []
+    for customer in customers:
+        account = CustomerAccount.objects.filter(ssn=customer).first()
+        if account:
+            account_type = None
+            if Loan.objects.filter(account_no=account.account_no).exists():
+                account_type = "Loan Account"
+            elif Savings.objects.filter(account_no=account.account_no).exists():
+                account_type = "Savings Account"
+            elif Checking.objects.filter(account_no=account.account_no).exists():
+                account_type = "Checking Account"
+            else:
+                account_type = "Unknown Account Type"
+
+            last_transaction = (
+                Transaction.objects.filter(account_no=account.account_no)
+                .order_by('-trans_date')
+                .first()
+            )
+            last_activity = last_transaction.trans_date if last_transaction else "No activity"
+        else:
+            account_type = "No account"
+            last_activity = "No activity"
+
+        customer_details.append({
+            'name': customer.name,
+            'account_type': account_type,
+            'last_activity': last_activity,
+        })
+
+    # Fetch dependents
+    dependents = Dependent.objects.filter(essn=employee)
+
+    # Context for template
+    context = {
+        'employee': employee,
+        'branch_name': branch_name,
+        'manager_name': manager_name,
+        'customer_details': customer_details,
+        'dependents': dependents,
+    }
+
+    return render(request, 'employee_dashboard.html', context)
 def branch_dashboard(request, branch_id):
+    # Fetch branch details
     branch = get_object_or_404(Branch, branch_id=branch_id)
-    return render(request, 'branch_dashboard.html', {'branch': branch})
+
+    # Fetch employees working in this branch
+    employees = Employee.objects.filter(branch=branch)
+
+    # Prepare customer details with account type and assigned employee
+    customer_details = []
+    accounts = Account.objects.filter(branch=branch)
+    for account in accounts:
+        customer_account = CustomerAccount.objects.filter(account_no=account).first()
+        if customer_account:
+            customer = customer_account.ssn
+            assigned_employee = customer.e_ssn.name if customer.e_ssn else "No assigned employee"
+
+            # Determine account type
+            if Loan.objects.filter(account_no=account).exists():
+                account_type = "Loan Account"
+            elif Savings.objects.filter(account_no=account).exists():
+                account_type = "Savings Account"
+            elif Checking.objects.filter(account_no=account).exists():
+                account_type = "Checking Account"
+            else:
+                account_type = "Unknown Account Type"
+
+            customer_details.append({
+                'account_no': account.account_no,
+                'customer_name': customer.name,
+                'account_type': account_type,
+                'assigned_employee': assigned_employee,
+            })
+
+    # Context for the template
+    context = {
+        'branch': branch,
+        'employees': employees,
+        'customer_details': customer_details,
+    }
+
+    return render(request, 'branch_dashboard.html', context)
