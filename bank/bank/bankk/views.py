@@ -5,6 +5,9 @@ from django.urls import reverse  # Ensure reverse is imported
 from bank.bankk.models import Customer, Employee, Branch, Transaction, Dependent, CustomerAccount, Loan, Savings, Checking, Account
 from django.http import HttpResponseRedirect
 from django.db.models import Q
+from django.db import transaction
+import random
+
 
 
 def login_view(request):
@@ -82,7 +85,88 @@ def login_view(request):
 
     return render(request, 'login.html')
 
-from django.db.models import Q
+from django.shortcuts import render, redirect, get_object_or_404
+from bank.bankk.models import Customer, Branch, Account
+from django.db import transaction
+import random
+
+
+def signup_view(request):
+    if request.method == 'POST':
+        ssn = request.POST.get('ssn')
+        name = request.POST.get('name')
+        apt_no = request.POST.get('apt_no')
+        street_no = request.POST.get('street_no')
+        state = request.POST.get('state')
+        city = request.POST.get('city')
+        zip_code = request.POST.get('zip')
+        branch_id = request.POST.get('branch_id_customer_signup')
+        account_type = request.POST.get('acc_type')
+
+        # Validate input
+        if not all([ssn, name, apt_no, street_no, state, city, zip_code, branch_id, account_type]):
+            return render(request, 'login.html', {
+                'error': 'All fields are required for signup.',
+                'branches': Branch.objects.all()
+            })
+
+        try:
+            # Validate numeric fields
+            ssn = int(ssn)
+            apt_no = int(apt_no)
+            street_no = int(street_no)
+            zip_code = int(zip_code)
+            branch_id = int(branch_id)
+        except ValueError:
+            return render(request, 'login.html', {
+                'error': 'SSN, Apartment Number, Street Number, ZIP Code, and Branch ID must be valid numbers.',
+                'branches': Branch.objects.all()
+            })
+
+        branch = Branch.objects.filter(branch_id=branch_id).first()
+        if not branch:
+            return render(request, 'login.html', {
+                'error': 'Branch ID does not exist.',
+                'branches': Branch.objects.all()
+            })
+
+        # Transaction to insert into CUSTOMER and ACCOUNT
+        try:
+            with transaction.atomic():
+                # Create the Customer record
+                customer = Customer.objects.create(
+                    ssn=ssn,
+                    name=name,
+                    apt_no=apt_no,
+                    street_no=street_no,
+                    state=state,
+                    city=city,
+                    zip=zip_code,
+                    branch_id=branch_id,
+                    e_ssn=None  # Assuming no assigned employee for now
+                )
+
+                # Generate a random account number
+                account_no = random.randint(1000000000, 9999999999)
+
+                # Create the Account record
+                Account.objects.create(
+                    account_no=account_no,
+                    balance=0.0,  # Default initial balance
+                    branch_id=branch_id,
+                    acc_type=account_type
+                )
+
+            return redirect('login_view')
+        except Exception as e:
+            return render(request, 'login.html', {
+                'error': f'An error occurred while creating the account: {str(e)}',
+                'branches': Branch.objects.all()
+            })
+
+    # Render the signup form with available branches
+    branches = Branch.objects.all()
+    return render(request, 'login.html', {'branches': branches})
 
 def customer_dashboard(request, ssn):
     print(f"Loading dashboard for customer SSN: {ssn}")
@@ -130,6 +214,7 @@ def customer_dashboard(request, ssn):
     }
 
     return render(request, 'customer_dashboard.html', context)
+
 def employee_dashboard(request, ssn):
     # Fetch employee details
     employee = get_object_or_404(Employee, ssn=ssn)
@@ -187,6 +272,7 @@ def employee_dashboard(request, ssn):
     }
 
     return render(request, 'employee_dashboard.html', context)
+
 def branch_dashboard(request, branch_id):
     # Fetch branch details
     branch = get_object_or_404(Branch, branch_id=branch_id)
