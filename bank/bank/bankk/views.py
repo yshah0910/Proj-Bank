@@ -7,6 +7,8 @@ from django.http import HttpResponseRedirect
 from django.db.models import Q
 from django.db import transaction
 import random
+from django.utils import timezone
+from decimal import Decimal  # Ensure Decimal is imported
 
 
 
@@ -147,14 +149,21 @@ def signup_view(request):
                 )
 
                 # Generate a random account number
-                account_no = random.randint(1000000000, 9999999999)
+                next_account_no = get_next_account_no()
 
                 # Create the Account record
-                Account.objects.create(
-                    account_no=account_no,
+                account = Account.objects.create(
+                    account_no=next_account_no,
                     balance=0.0,  # Default initial balance
                     branch_id=branch_id,
                     acc_type=account_type
+                )
+
+                # Create the CustomerAccount record
+                CustomerAccount.objects.create(
+                    ssn=customer,
+                    account_no=account,
+                    last_access_date=timezone.now()
                 )
 
             return redirect('login_view')
@@ -168,52 +177,141 @@ def signup_view(request):
     branches = Branch.objects.all()
     return render(request, 'login.html', {'branches': branches})
 
+def get_next_account_no():
+    last_account = Account.objects.all().order_by('account_no').last()
+    if not last_account:
+        return 1000000000
+    return last_account.account_no + 1
+
+def get_next_trans_code():
+    last_transaction = Transaction.objects.all().order_by('trans_code').last()
+    if not last_transaction:
+        return 100000
+    return last_transaction.trans_code + 1
+
 def customer_dashboard(request, ssn):
     print(f"Loading dashboard for customer SSN: {ssn}")
 
     # Fetch customer details
     customer = get_object_or_404(Customer, ssn=ssn)
 
-    # Fetch last transaction
-    last_transaction = (
-        Transaction.objects.filter(account_no__customeraccount__ssn=customer)
-        .order_by('-trans_date')
-        .first()
-    )
-
-    # Branch address
     branch_address = customer.branch.address if customer.branch else "No branch assigned"
 
-    # Determine account type based on related account
-    account = CustomerAccount.objects.filter(ssn=customer).first()
-    account_type = None
-    if account:
-        if Loan.objects.filter(account_no=account.account_no).exists():
-            account_type = "Loan Account"
-        elif Savings.objects.filter(account_no=account.account_no).exists():
-            account_type = "Savings Account"
-        elif Checking.objects.filter(account_no=account.account_no).exists():
-            account_type = "Checking Account"
-        else:
-            account_type = "Unknown Account Type"
-
-    # Associated employee
     associated_employee = customer.e_ssn.name if customer.e_ssn else "No assigned employee"
 
-    # Fetch all transactions
-    transactions = Transaction.objects.filter(account_no__customeraccount__ssn=customer)
+    customer_accounts = CustomerAccount.objects.filter(ssn=customer.ssn)
+    account_details = []
+    
+    for customer_account in customer_accounts:
+        try:
+            # Correctly fetch the Account object using the account_no
+            acc = Account.objects.get(account_no=customer_account.account_no.account_no)
+            # Fetch transactions for this account
+            transactions = Transaction.objects.filter(account_no=acc.account_no)
+            
+            account_details.append({
+                'account_no': acc.account_no,
+                'acc_type': acc.acc_type,
+                'balance': acc.balance,
+                'transactions': transactions
+            })
+        except Account.DoesNotExist:
+            print(f"Account not found for account number: {customer_account.account_no}")
 
-    # Context for template
     context = {
         'customer': customer,
-        'last_transaction': last_transaction,
         'branch_address': branch_address,
-        'account_type': account_type,
         'associated_employee': associated_employee,
-        'transactions': transactions,
+        'accounts': account_details,
     }
 
+    if request.method == 'POST':
+        if 'create_account' in request.POST:
+            account_type = request.POST.get('account_type')
+            if account_type:
+                try:
+                    with transaction.atomic():
+                        # Generate next account number
+                        account_no = get_next_account_no()
+                        
+                        # Create new Account
+                        new_account = Account.objects.create(
+                            account_no=account_no,
+                            balance=0.0,
+                            branch_id=customer.branch_id,
+                            acc_type=account_type
+                        )
+                        
+                        # Create CustomerAccount linking
+                        CustomerAccount.objects.create(
+                            ssn=customer,
+                            account_no=new_account,  # Pass the Account instance
+                            last_access_date=timezone.now()
+                        )
+                        
+                        return redirect('customer_dashboard', ssn=customer.ssn)
+                
+                except Exception as e:
+                    context['error'] = f'Error creating account: {str(e)}'
+                    print(f"Account creation error: {e}")
+
+        elif 'make_transaction' in request.POST:
+            account_no = request.POST.get('account_no')
+            trans_type = request.POST.get('trans_type')
+            amount = request.POST.get('amount')
+            chargeable = request.POST.get('chargeable')  # Get chargeable field value as "Yes" or "No"
+            print("Chargeable:", chargeable)
+
+            try:
+                amount = Decimal(amount)  # Convert amount to Decimal
+                account_no = int(account_no)
+                
+                with transaction.atomic():
+                    # Fetch the Account instance
+                    account = Account.objects.get(account_no=account_no)
+                    
+                    # Generate next transaction code
+                    trans_code = get_next_trans_code()
+                    
+                    # Create Transaction
+                    trans = Transaction.objects.create(
+                        trans_code=trans_code,
+                        trans_date=timezone.now().date(),
+                        hour=timezone.now().hour,  # Assign only the hour part
+                        trans_type=trans_type,
+                        amount=amount,
+                        chargeable=chargeable,
+                        account_no=account  # Pass the Account instance
+                    )
+                    
+                    # Update Account Balance
+                    if trans_type.lower() == 'deposit':
+                        account.balance += amount
+                    elif trans_type.lower() == 'withdrawal':
+                        if account.balance >= amount:
+                            account.balance -= amount
+                        else:
+                            raise ValueError("Insufficient funds")
+                    elif trans_type.lower() == 'payment':
+                        if account.balance >= amount:
+                            account.balance -= amount
+                        else:
+                            raise ValueError("Insufficient funds")
+                    elif trans_type.lower() == 'transfer':
+                        if account.balance >= amount:
+                            account.balance -= amount
+                        else:
+                            raise ValueError("Insufficient funds")
+                    account.save()
+                    
+                    return redirect('customer_dashboard', ssn=customer.ssn)
+            
+            except Exception as e:
+                context['error'] = f'Transaction error: {str(e)}'
+                print(f"Transaction error: {e}")
+
     return render(request, 'customer_dashboard.html', context)
+
 
 def employee_dashboard(request, ssn):
     # Fetch employee details
