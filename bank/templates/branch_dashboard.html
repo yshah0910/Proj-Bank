@@ -121,22 +121,104 @@
             <thead>
                 <tr>
                     <th>Account Number</th>
-                    <th>Customer Name</th>
+                    <th>Balance</th>
+                    <th>Branch</th>
                     <th>Account Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for account in customer_accounts %}
+                    <tr>
+                        <td>{{ account.account_no }}</td>
+                        <td>${{ account.balance|floatformat:2 }}</td>
+                        <td>{{ account.branch.name }}</td>
+                        <td>{{ account.acc_type }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="no-data">No customer accounts found for this branch.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Customer Information</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>SSN</th>
+                    <th>Name</th>
+                    <th>Apartment Number</th>
+                    <th>Street Number</th>
+                    <th>State</th>
+                    <th>City</th>
+                    <th>ZIP Code</th>
+                    <th>Branch</th>
                     <th>Assigned Employee</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for customer in customer_details %}
                     <tr>
-                        <td>{{ customer.account_no }}</td>
-                        <td>{{ customer.customer_name }}</td>
-                        <td>{{ customer.account_type }}</td>
+                        <td>{{ customer.ssn }}</td>
+                        <td>{{ customer.name }}</td>
+                        <td>{{ customer.apt_no }}</td>
+                        <td>{{ customer.street_no }}</td>
+                        <td>{{ customer.state }}</td>
+                        <td>{{ customer.city }}</td>
+                        <td>{{ customer.zip }}</td>
+                        <td>{{ customer.branch.name }}</td>
                         <td>{{ customer.assigned_employee }}</td>
+                        <td>
+                            <button onclick="document.getElementById('editCustomerForm{{ customer.ssn }}').style.display='block'">Edit</button>
+                        </td>
+                    </tr>
+                    <tr id="editCustomerForm{{ customer.ssn }}" style="display:none;">
+                        <td colspan="10">
+                            <form method="post" action="{% url 'branch_dashboard' branch.branch_id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="ssn" value="{{ customer.ssn }}">
+                                <label for="name">Name:</label>
+                                <input type="text" id="name" name="name" value="{{ customer.name }}" required><br>
+                                
+                                <label for="apt_no">Apartment Number:</label>
+                                <input type="number" id="apt_no" name="apt_no" value="{{ customer.apt_no }}" required><br>
+                                
+                                <label for="street_no">Street Number:</label>
+                                <input type="number" id="street_no" name="street_no" value="{{ customer.street_no }}" required><br>
+                                
+                                <label for="state">State:</label>
+                                <input type="text" id="state" name="state" value="{{ customer.state }}" required><br>
+                                
+                                <label for="city">City:</label>
+                                <input type="text" id="city" name="city" value="{{ customer.city }}" required><br>
+                                
+                                <label for="zip">ZIP Code:</label>
+                                <input type="number" id="zip" name="zip" value="{{ customer.zip }}" required><br>
+                                
+                                <label for="branch_id">Branch:</label>
+                                <select id="branch_id" name="branch_id" required>
+                                    {% for branch in branches %}
+                                        <option value="{{ branch.branch_id }}" {% if branch.branch_id == customer.branch_id %}selected{% endif %}>{{ branch.name }}</option>
+                                    {% endfor %}
+                                </select><br>
+                                
+                                <label for="e_ssn">Assigned Employee:</label>
+                                <select id="e_ssn" name="e_ssn">
+                                    <option value="" {% if not customer.e_ssn %}selected{% endif %}>No assigned employee</option>
+                                    {% for employee in employees %}
+                                        <option value="{{ employee.ssn }}" {% if customer.e_ssn and employee.ssn == customer.e_ssn.ssn %}selected{% endif %}>{{ employee.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                
+                                <button type="submit" name="edit_customer">Save Changes</button>
+                            </form>
+                        </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="4" class="no-data">No customer accounts found for this branch.</td>
+                        <td colspan="10" class="no-data">No customer information found for this branch.</td>
                     </tr>
                 {% endfor %}
             </tbody>

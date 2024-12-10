@@ -1,14 +1,15 @@
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User, Group
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse  # Ensure reverse is imported
+from django.urls import reverse
 from bank.bankk.models import Customer, Employee, Branch, Transaction, Dependent, CustomerAccount, Loan, Savings, Checking, Account
 from django.http import HttpResponseRedirect
 from django.db.models import Q
 from django.db import transaction
 import random
 from django.utils import timezone
-from decimal import Decimal  # Ensure Decimal is imported
+from decimal import Decimal
+from django.views.decorators.csrf import csrf_exempt
 
 
 
@@ -82,7 +83,6 @@ def login_view(request):
             else:
                 return render(request, 'login.html', {'error': 'Invalid branch credentials.'})
 
-        # Generic error for invalid login type
         return render(request, 'login.html', {'error': 'Invalid login type selected.'})
 
     return render(request, 'login.html')
@@ -105,7 +105,6 @@ def signup_view(request):
         branch_id = request.POST.get('branch_id_customer_signup')
         account_type = request.POST.get('acc_type')
 
-        # Validate input
         if not all([ssn, name, apt_no, street_no, state, city, zip_code, branch_id, account_type]):
             return render(request, 'login.html', {
                 'error': 'All fields are required for signup.',
@@ -113,7 +112,6 @@ def signup_view(request):
             })
 
         try:
-            # Validate numeric fields
             ssn = int(ssn)
             apt_no = int(apt_no)
             street_no = int(street_no)
@@ -132,10 +130,8 @@ def signup_view(request):
                 'branches': Branch.objects.all()
             })
 
-        # Transaction to insert into CUSTOMER and ACCOUNT
         try:
             with transaction.atomic():
-                # Create the Customer record
                 customer = Customer.objects.create(
                     ssn=ssn,
                     name=name,
@@ -145,21 +141,18 @@ def signup_view(request):
                     city=city,
                     zip=zip_code,
                     branch_id=branch_id,
-                    e_ssn=None  # Assuming no assigned employee for now
+                    e_ssn=None
                 )
 
-                # Generate a random account number
                 next_account_no = get_next_account_no()
 
-                # Create the Account record
                 account = Account.objects.create(
                     account_no=next_account_no,
-                    balance=0.0,  # Default initial balance
+                    balance=0.0,
                     branch_id=branch_id,
                     acc_type=account_type
                 )
 
-                # Create the CustomerAccount record
                 CustomerAccount.objects.create(
                     ssn=customer,
                     account_no=account,
@@ -173,7 +166,6 @@ def signup_view(request):
                 'branches': Branch.objects.all()
             })
 
-    # Render the signup form with available branches
     branches = Branch.objects.all()
     return render(request, 'login.html', {'branches': branches})
 
@@ -192,7 +184,6 @@ def get_next_trans_code():
 def customer_dashboard(request, ssn):
     print(f"Loading dashboard for customer SSN: {ssn}")
 
-    # Fetch customer details
     customer = get_object_or_404(Customer, ssn=ssn)
 
     branch_address = customer.branch.address if customer.branch else "No branch assigned"
@@ -204,9 +195,7 @@ def customer_dashboard(request, ssn):
     
     for customer_account in customer_accounts:
         try:
-            # Correctly fetch the Account object using the account_no
             acc = Account.objects.get(account_no=customer_account.account_no.account_no)
-            # Fetch transactions for this account
             transactions = Transaction.objects.filter(account_no=acc.account_no)
             
             account_details.append({
@@ -231,10 +220,8 @@ def customer_dashboard(request, ssn):
             if account_type:
                 try:
                     with transaction.atomic():
-                        # Generate next account number
                         account_no = get_next_account_no()
                         
-                        # Create new Account
                         new_account = Account.objects.create(
                             account_no=account_no,
                             balance=0.0,
@@ -242,10 +229,9 @@ def customer_dashboard(request, ssn):
                             acc_type=account_type
                         )
                         
-                        # Create CustomerAccount linking
                         CustomerAccount.objects.create(
                             ssn=customer,
-                            account_no=new_account,  # Pass the Account instance
+                            account_no=new_account,
                             last_access_date=timezone.now()
                         )
                         
@@ -259,32 +245,28 @@ def customer_dashboard(request, ssn):
             account_no = request.POST.get('account_no')
             trans_type = request.POST.get('trans_type')
             amount = request.POST.get('amount')
-            chargeable = request.POST.get('chargeable')  # Get chargeable field value as "Yes" or "No"
+            chargeable = request.POST.get('chargeable')
             print("Chargeable:", chargeable)
 
             try:
-                amount = Decimal(amount)  # Convert amount to Decimal
+                amount = Decimal(amount)
                 account_no = int(account_no)
                 
                 with transaction.atomic():
-                    # Fetch the Account instance
                     account = Account.objects.get(account_no=account_no)
                     
-                    # Generate next transaction code
                     trans_code = get_next_trans_code()
                     
-                    # Create Transaction
                     trans = Transaction.objects.create(
                         trans_code=trans_code,
                         trans_date=timezone.now().date(),
-                        hour=timezone.now().hour,  # Assign only the hour part
+                        hour=timezone.now().hour,
                         trans_type=trans_type,
                         amount=amount,
                         chargeable=chargeable,
-                        account_no=account  # Pass the Account instance
+                        account_no=account
                     )
                     
-                    # Update Account Balance
                     if trans_type.lower() == 'deposit':
                         account.balance += amount
                     elif trans_type.lower() == 'withdrawal':
@@ -314,19 +296,14 @@ def customer_dashboard(request, ssn):
 
 
 def employee_dashboard(request, ssn):
-    # Fetch employee details
     employee = get_object_or_404(Employee, ssn=ssn)
 
-    # Fetch branch name
     branch_name = employee.branch.name if employee.branch else "No branch assigned"
 
-    # Fetch manager name
     manager_name = employee.manager_ssn.name if employee.manager_ssn else "No manager assigned"
 
-    # Fetch all customers assigned to this employee
     customers = Customer.objects.filter(e_ssn=employee)
 
-    # Prepare customer details
     customer_details = []
     for customer in customers:
         account = CustomerAccount.objects.filter(ssn=customer).first()
@@ -357,10 +334,8 @@ def employee_dashboard(request, ssn):
             'last_activity': last_activity,
         })
 
-    # Fetch dependents
     dependents = Dependent.objects.filter(essn=employee)
 
-    # Context for template
     context = {
         'employee': employee,
         'branch_name': branch_name,
@@ -372,43 +347,71 @@ def employee_dashboard(request, ssn):
     return render(request, 'employee_dashboard.html', context)
 
 def branch_dashboard(request, branch_id):
-    # Fetch branch details
     branch = get_object_or_404(Branch, branch_id=branch_id)
 
-    # Fetch employees working in this branch
+    if request.method == 'POST' and 'edit_customer' in request.POST:
+        ssn = request.POST.get('ssn')
+        customer = get_object_or_404(Customer, ssn=ssn)
+        customer.name = request.POST.get('name')
+        customer.apt_no = request.POST.get('apt_no')
+        customer.street_no = request.POST.get('street_no')
+        customer.state = request.POST.get('state')
+        customer.city = request.POST.get('city')
+        customer.zip = request.POST.get('zip')
+        customer.branch_id = request.POST.get('branch_id')
+        e_ssn = request.POST.get('e_ssn')
+        customer.e_ssn = get_object_or_404(Employee, ssn=e_ssn) if e_ssn else None
+        customer.save()
+
     employees = Employee.objects.filter(branch=branch)
 
-    # Prepare customer details with account type and assigned employee
     customer_details = []
-    accounts = Account.objects.filter(branch=branch)
-    for account in accounts:
-        customer_account = CustomerAccount.objects.filter(account_no=account).first()
-        if customer_account:
-            customer = customer_account.ssn
-            assigned_employee = customer.e_ssn.name if customer.e_ssn else "No assigned employee"
+    customers = Customer.objects.filter(branch=branch)
+    for customer in customers:
+        customer_details.append({
+            'ssn': customer.ssn,
+            'name': customer.name,
+            'apt_no': customer.apt_no,
+            'street_no': customer.street_no,
+            'state': customer.state,
+            'city': customer.city,
+            'zip': customer.zip,
+            'branch': customer.branch,
+            'e_ssn': customer.e_ssn,
+            'assigned_employee': customer.e_ssn.name if customer.e_ssn else "No assigned employee",
+        })
 
-            # Determine account type
-            if Loan.objects.filter(account_no=account).exists():
-                account_type = "Loan Account"
-            elif Savings.objects.filter(account_no=account).exists():
-                account_type = "Savings Account"
-            elif Checking.objects.filter(account_no=account).exists():
-                account_type = "Checking Account"
-            else:
-                account_type = "Unknown Account Type"
+    customer_accounts = Account.objects.filter(branch_id=branch_id)
 
-            customer_details.append({
-                'account_no': account.account_no,
-                'customer_name': customer.name,
-                'account_type': account_type,
-                'assigned_employee': assigned_employee,
-            })
-
-    # Context for the template
     context = {
         'branch': branch,
         'employees': employees,
         'customer_details': customer_details,
+        'branches': Branch.objects.all(),
+        'customer_accounts': customer_accounts,
     }
 
     return render(request, 'branch_dashboard.html', context)
+
+@csrf_exempt
+def edit_customer(request, ssn):
+    customer = get_object_or_404(Customer, ssn=ssn)
+    if request.method == 'POST':
+        customer.name = request.POST.get('name')
+        customer.apt_no = request.POST.get('apt_no')
+        customer.street_no = request.POST.get('street_no')
+        customer.state = request.POST.get('state')
+        customer.city = request.POST.get('city')
+        customer.zip = request.POST.get('zip')
+        customer.branch_id = request.POST.get('branch_id')
+        e_ssn = request.POST.get('e_ssn')
+        customer.e_ssn = get_object_or_404(Employee, ssn=e_ssn) if e_ssn else None
+        customer.save()
+        return redirect('branch_dashboard', branch_id=customer.branch_id)
+    
+    context = {
+        'customer': customer,
+        'branches': Branch.objects.all(),
+        'employees': Employee.objects.all(),
+    }
+    return render(request, 'edit_customer.html', context)
