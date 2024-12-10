@@ -9,6 +9,7 @@ from django.db import transaction
 import random
 from django.utils import timezone
 from decimal import Decimal  # Ensure Decimal is imported
+from django.db.models import Sum
 
 
 
@@ -418,6 +419,9 @@ def branch_dashboard(request, branch_id):
     # Fetch employees working in this branch
     employees = Employee.objects.filter(branch=branch)
 
+    # Calculate total assets dynamically from account balances
+    total_assets = Account.objects.filter(branch=branch).aggregate(Sum('balance'))['balance__sum'] or 0.0
+
     # Prepare customer details with account type and assigned employee
     customer_details = []
     accounts = Account.objects.filter(branch=branch)
@@ -449,6 +453,7 @@ def branch_dashboard(request, branch_id):
         'branch': branch,
         'employees': employees,
         'customer_details': customer_details,
+        'total_assets': total_assets,  # Pass dynamic total assets to the template
     }
 
     return render(request, 'branch_dashboard.html', context)
