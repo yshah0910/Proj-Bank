@@ -1,49 +1,146 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Branch Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+            position: relative;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 10;
+        }
+        h1, h2 {
+            color: #007BFF;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        p {
+            margin: 10px 0;
+        }
+        ul {
+            margin: 10px 0 0 20px;
+            padding: 0;
+        }
+        ul li {
+            margin-bottom: 8px;
+        }
+        .no-data {
+            color: #999;
+            font-style: italic;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        table th {
+            background-color: #007BFF;
+            color: white;
+        }
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+        .logo {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 150px;
+        }
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            color: rgba(0, 0, 0, 0.1);
+            z-index: -1;
+            pointer-events: none;
+            text-align: center;
+            background-image: url('https://i0.wp.com/fortworthreport.org/wp-content/uploads/2024/06/unnamed-28-1.jpg?w=1369&ssl=1');
+            background-size: 400px;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.1;
+        }
+    </style>
 </head>
 <body>
-    <h1>Branch Dashboard</h1>
+    <!-- Watermark -->
+    <div class="watermark"></div>
 
-    <h2>Branch Details</h2>
-    <p><strong>Branch ID:</strong> {{ branch.branch_id }}</p>
-    <p><strong>Manager:</strong> {{ branch.mgr_ssn.name }}</p>
-    <p><strong>Total Assets:</strong> {{ branch.assets }}</p>
+    <!-- Bank Logo -->
+    <img src="https://i0.wp.com/fortworthreport.org/wp-content/uploads/2024/06/unnamed-28-1.jpg?w=1369&ssl=1" alt="Legacy Bank Logo" class="logo">
 
-    <h2>Employees</h2>
-    <ul>
-        {% for employee in employees %}
-            <li>{{ employee.name }} (SSN: {{ employee.ssn }})</li>
-        {% empty %}
-            <li>No employees found for this branch.</li>
-        {% endfor %}
-    </ul>
+    <div class="container">
+        <h1>Branch Dashboard</h1>
 
-    <h2>Customer Accounts</h2>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Account Number</th>
-                <th>Customer Name</th>
-                <th>Account Type</th>
-                <th>Assigned Employee</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for customer in customer_details %}
-                <tr>
-                    <td>{{ customer.account_no }}</td>
-                    <td>{{ customer.customer_name }}</td>
-                    <td>{{ customer.account_type }}</td>
-                    <td>{{ customer.assigned_employee }}</td>
-                </tr>
+        <h2>Branch Details</h2>
+        <p><strong>Branch ID:</strong> {{ branch.branch_id }}</p>
+        <p><strong>Manager:</strong> {{ branch.mgr_ssn.name }}</p>
+        <p><strong>Total Assets:</strong> ${{ branch.assets|floatformat:2 }}</p>
+
+        <h2>Employees</h2>
+        <ul>
+            {% for employee in employees %}
+                <li>{{ employee.name }} (SSN: {{ employee.ssn }})</li>
             {% empty %}
-                <tr>
-                    <td colspan="4">No customer accounts found for this branch.</td>
-                </tr>
+                <li class="no-data">No employees found for this branch.</li>
             {% endfor %}
-        </tbody>
-    </table>
+        </ul>
+
+        <h2>Customer Accounts</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Account Number</th>
+                    <th>Customer Name</th>
+                    <th>Account Type</th>
+                    <th>Assigned Employee</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customer_details %}
+                    <tr>
+                        <td>{{ customer.account_no }}</td>
+                        <td>{{ customer.customer_name }}</td>
+                        <td>{{ customer.account_type }}</td>
+                        <td>{{ customer.assigned_employee }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="no-data">No customer accounts found for this branch.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>
