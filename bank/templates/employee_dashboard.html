@@ -1,47 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+            position: relative;
+            overflow: hidden;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 10;
+        }
+        h1, h2 {
+            color: #007BFF;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        p {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        table th {
+            background-color: #007BFF;
+            color: white;
+        }
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+        ul {
+            margin: 10px 0 0 20px;
+            padding: 0;
+        }
+        ul li {
+            margin-bottom: 5px;
+        }
+        .no-data {
+            color: #999;
+            font-style: italic;
+        }
+        .logo {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 150px;
+        }
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 130px;
+            color: rgba(0, 0, 0, 0.1);
+            z-index: -1;
+            pointer-events: none;
+            text-align: center;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome, {{ employee.name }}</h1>
+    <!-- Watermark -->
+    <div class="watermark">Legacy Bank</div>
 
-    <h2>Your Information</h2>
-    <p><strong>SSN:</strong> {{ employee.ssn }}</p>
-    <p><strong>Branch:</strong> {{ branch_name }}</p>
-    <p><strong>Manager:</strong> {{ manager_name }}</p>
+    <div class="container">
+        <!-- Logo -->
+        <img src="https://i0.wp.com/fortworthreport.org/wp-content/uploads/2024/06/unnamed-28-1.jpg?w=1369&ssl=1" alt="Legacy Bank Logo" class="logo">
 
-    <h2>Your Customers</h2>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Customer Name</th>
-                <th>Account Type</th>
-                <th>Last Activity</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for customer in customer_details %}
+        <h1>Welcome, {{ employee.name }}</h1>
+
+        <h2>Your Information</h2>
+        <p><strong>SSN:</strong> {{ employee.ssn }}</p>
+        <p><strong>Branch:</strong> {{ branch_name }}</p>
+        <p><strong>Manager:</strong> {{ manager_name }}</p>
+
+        <h2>Your Customers</h2>
+        <table>
+            <thead>
                 <tr>
-                    <td>{{ customer.name }}</td>
-                    <td>{{ customer.account_type }}</td>
-                    <td>{{ customer.last_activity }}</td>
+                    <th>Customer Name</th>
+                    <th>Account Type</th>
+                    <th>Last Activity</th>
                 </tr>
+            </thead>
+            <tbody>
+                {% for customer in customer_details %}
+                    <tr>
+                        <td>{{ customer.name }}</td>
+                        <td>{{ customer.account_type }}</td>
+                        <td>{{ customer.last_activity }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" class="no-data">No customers assigned.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Your Dependents</h2>
+        <ul>
+            {% for dependent in dependents %}
+                <li>{{ dependent.name }}</li>
             {% empty %}
-                <tr>
-                    <td colspan="3">No customers assigned.</td>
-                </tr>
+                <li class="no-data">No dependents assigned.</li>
             {% endfor %}
-        </tbody>
-    </table>
-
-    <h2>Your Dependents</h2>
-    <ul>
-        {% for dependent in dependents %}
-            <li>{{ dependent.name }}</li>
-        {% empty %}
-            <li>No dependents assigned.</li>
-        {% endfor %}
-    </ul>
+        </ul>
+    </div>
 </body>
 </html>
